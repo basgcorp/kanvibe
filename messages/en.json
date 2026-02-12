@@ -1,0 +1,98 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "create": "Create",
+    "creating": "Creating...",
+    "save": "Save",
+    "close": "Close",
+    "confirm": "Confirm",
+    "local": "Local",
+    "settings": "Settings",
+    "logout": "Logout",
+    "loading": "Loading..."
+  },
+  "login": {
+    "username": "Username",
+    "usernamePlaceholder": "Enter username",
+    "password": "Password",
+    "passwordPlaceholder": "Enter password",
+    "submit": "Login",
+    "loggingIn": "Logging in..."
+  },
+  "board": {
+    "title": "KanVibe",
+    "newTask": "+ New Task",
+    "columns": {
+      "todo": "Todo",
+      "progress": "Progress",
+      "review": "Review",
+      "done": "Done"
+    }
+  },
+  "task": {
+    "titleLabel": "Title",
+    "titlePlaceholder": "Task title",
+    "titleRequired": "Title *",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Task description (optional)",
+    "createWithSession": "Create with Branch + Session",
+    "project": "Project",
+    "projectSelect": "Select project",
+    "baseBranch": "Base branch",
+    "branchName": "Branch name",
+    "branchPlaceholder": "feat/my-feature",
+    "sessionType": "Session type",
+    "sshHost": "SSH Host (optional)",
+    "createTitle": "Create New Task",
+    "deleteConfirm": "Are you sure you want to delete this task?"
+  },
+  "branch": {
+    "title": "Branch Off",
+    "projectRequired": "Project *",
+    "noProjects": "No registered projects",
+    "baseBranch": "Base branch",
+    "newBranchName": "New branch name *",
+    "branchPlaceholder": "feat/my-feature",
+    "sessionType": "Session type",
+    "submit": "Branch",
+    "submitting": "Creating...",
+    "validationError": "Project and branch name are required.",
+    "failedError": "Failed to create branch."
+  },
+  "contextMenu": {
+    "branchOff": "Branch off",
+    "delete": "Delete"
+  },
+  "settings": {
+    "title": "Project Management",
+    "scanTitle": "Directory Scan",
+    "scanPathPlaceholder": "Directory path to scan (e.g., ~/Documents)",
+    "scanButton": "Scan & Register",
+    "scanning": "Scanning...",
+    "registered": "Registered",
+    "skipped": "Skipped",
+    "skippedSuffix": " (already registered)",
+    "errors": "Errors",
+    "errorsSuffix": "",
+    "registeredCount": "{count} projects registered",
+    "noNewProjects": "No new projects to register.",
+    "noGitRepos": "No git repositories found.",
+    "scanPathRequired": "Please enter the directory path to scan.",
+    "projectList": "Registered Projects",
+    "noProjects": "No registered projects.",
+    "defaultBranch": "Default branch",
+    "deleteProject": "Delete",
+    "deleteConfirm": "Are you sure you want to delete \"{name}\"?"
+  },
+  "taskDetail": {
+    "backToBoard": "Back to Board",
+    "moveToTodo": "Move to Todo",
+    "moveToProgress": "Move to Progress",
+    "moveToReview": "Move to Review",
+    "moveToDone": "Move to Done",
+    "delete": "Delete",
+    "terminal": "Terminal",
+    "noTerminal": "No terminal session connected to this task."
+  }
+}

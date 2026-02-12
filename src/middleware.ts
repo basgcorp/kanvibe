@@ -1,28 +1,46 @@
+import createMiddleware from "next-intl/middleware";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { routing } from "./i18n/routing";
 
-const PUBLIC_PATHS = ["/login", "/api/hooks"];
+const intlMiddleware = createMiddleware(routing);
+
+const PUBLIC_PATHS = ["/login"];
 
 /**
- * 로그인 여부를 확인하는 미들웨어.
- * 공개 경로와 Hook API는 인증 없이 접근 가능하다.
+ * locale 라우팅과 인증을 결합한 미들웨어.
+ * next-intl이 locale을 처리한 뒤, 공개 경로가 아니면 세션 쿠키를 확인한다.
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
-  if (isPublicPath) {
+  const isApiPath = pathname.startsWith("/api/");
+  if (isApiPath) {
     return NextResponse.next();
   }
 
-  const sessionToken = request.cookies.get("kanvibe_session")?.value;
-  if (!sessionToken) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  const pathnameWithoutLocale = pathname.replace(
+    /^\/(ko|en|zh)/,
+    ""
+  ) || "/";
+
+  const isPublicPath = PUBLIC_PATHS.some((path) =>
+    pathnameWithoutLocale.startsWith(path)
+  );
+
+  if (!isPublicPath) {
+    const sessionToken = request.cookies.get("kanvibe_session")?.value;
+    if (!sessionToken) {
+      const locale = pathname.match(/^\/(ko|en|zh)/)?.[1] || routing.defaultLocale;
+      return NextResponse.redirect(
+        new URL(`/${locale}/login`, request.url)
+      );
+    }
   }
 
-  return NextResponse.next();
+  return intlMiddleware(request);
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/hooks).*)"],
 };

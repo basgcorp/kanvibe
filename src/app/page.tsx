@@ -1,20 +1,6 @@
-import Board from "@/components/Board";
-import { getTasksByStatus } from "@/app/actions/kanban";
-import { getAllProjects } from "@/app/actions/project";
-import { getAvailableHosts } from "@/lib/sshConfig";
+import { redirect } from "next/navigation";
+import { routing } from "@/i18n/routing";
 
-export const dynamic = "force-dynamic";
-
-export default async function HomePage() {
-  const tasks = await getTasksByStatus();
-  const sshHosts = await getAvailableHosts();
-  const projects = await getAllProjects();
-
-  return (
-    <Board
-      initialTasks={tasks}
-      sshHosts={sshHosts}
-      projects={projects}
-    />
-  );
+export default function RootPage() {
+  redirect(`/${routing.defaultLocale}`);
 }

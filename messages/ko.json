@@ -1,0 +1,98 @@
+{
+  "common": {
+    "cancel": "취소",
+    "delete": "삭제",
+    "create": "생성",
+    "creating": "생성 중...",
+    "save": "저장",
+    "close": "닫기",
+    "confirm": "확인",
+    "local": "로컬",
+    "settings": "설정",
+    "logout": "로그아웃",
+    "loading": "로딩 중..."
+  },
+  "login": {
+    "username": "사용자 이름",
+    "usernamePlaceholder": "사용자 이름 입력",
+    "password": "비밀번호",
+    "passwordPlaceholder": "비밀번호 입력",
+    "submit": "로그인",
+    "loggingIn": "로그인 중..."
+  },
+  "board": {
+    "title": "KanVibe",
+    "newTask": "+ 새 작업",
+    "columns": {
+      "todo": "Todo",
+      "progress": "Progress",
+      "review": "Review",
+      "done": "Done"
+    }
+  },
+  "task": {
+    "titleLabel": "제목",
+    "titlePlaceholder": "작업 제목",
+    "titleRequired": "제목 *",
+    "descriptionLabel": "설명",
+    "descriptionPlaceholder": "작업 설명 (선택)",
+    "createWithSession": "Branch + 세션과 함께 생성",
+    "project": "프로젝트",
+    "projectSelect": "프로젝트 선택",
+    "baseBranch": "베이스 브랜치",
+    "branchName": "Branch 이름",
+    "branchPlaceholder": "feat/my-feature",
+    "sessionType": "세션 타입",
+    "sshHost": "SSH 호스트 (선택)",
+    "createTitle": "새 작업 생성",
+    "deleteConfirm": "이 작업을 삭제하시겠습니까?"
+  },
+  "branch": {
+    "title": "브랜치 분기",
+    "projectRequired": "프로젝트 *",
+    "noProjects": "등록된 프로젝트 없음",
+    "baseBranch": "베이스 브랜치",
+    "newBranchName": "새 브랜치 이름 *",
+    "branchPlaceholder": "feat/my-feature",
+    "sessionType": "세션 타입",
+    "submit": "분기",
+    "submitting": "생성 중...",
+    "validationError": "프로젝트와 브랜치 이름은 필수입니다.",
+    "failedError": "브랜치 분기에 실패했습니다."
+  },
+  "contextMenu": {
+    "branchOff": "브랜치 분기",
+    "delete": "삭제"
+  },
+  "settings": {
+    "title": "프로젝트 관리",
+    "scanTitle": "디렉토리 스캔",
+    "scanPathPlaceholder": "스캔할 디렉토리 경로 (예: ~/Documents)",
+    "scanButton": "스캔 및 등록",
+    "scanning": "스캔 중...",
+    "registered": "등록",
+    "skipped": "건너뜀",
+    "skippedSuffix": "개 (이미 등록)",
+    "errors": "오류",
+    "errorsSuffix": "개",
+    "registeredCount": "{count}개 프로젝트 등록 완료",
+    "noNewProjects": "새로 등록할 프로젝트가 없습니다.",
+    "noGitRepos": "git 저장소를 찾을 수 없습니다.",
+    "scanPathRequired": "스캔할 디렉토리 경로를 입력하세요.",
+    "projectList": "등록된 프로젝트",
+    "noProjects": "등록된 프로젝트가 없습니다.",
+    "defaultBranch": "기본 브랜치",
+    "deleteProject": "삭제",
+    "deleteConfirm": "\"{name}\" 프로젝트를 삭제하시겠습니까?"
+  },
+  "taskDetail": {
+    "backToBoard": "보드로 돌아가기",
+    "moveToTodo": "Todo로 이동",
+    "moveToProgress": "Progress로 이동",
+    "moveToReview": "Review로 이동",
+    "moveToDone": "Done으로 이동",
+    "delete": "삭제",
+    "terminal": "터미널",
+    "noTerminal": "이 작업에는 연결된 터미널 세션이 없습니다."
+  }
+}

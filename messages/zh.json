@@ -1,0 +1,98 @@
+{
+  "common": {
+    "cancel": "取消",
+    "delete": "删除",
+    "create": "创建",
+    "creating": "创建中...",
+    "save": "保存",
+    "close": "关闭",
+    "confirm": "确认",
+    "local": "本地",
+    "settings": "设置",
+    "logout": "退出登录",
+    "loading": "加载中..."
+  },
+  "login": {
+    "username": "用户名",
+    "usernamePlaceholder": "输入用户名",
+    "password": "密码",
+    "passwordPlaceholder": "输入密码",
+    "submit": "登录",
+    "loggingIn": "登录中..."
+  },
+  "board": {
+    "title": "KanVibe",
+    "newTask": "+ 新任务",
+    "columns": {
+      "todo": "待办",
+      "progress": "进行中",
+      "review": "审核",
+      "done": "完成"
+    }
+  },
+  "task": {
+    "titleLabel": "标题",
+    "titlePlaceholder": "任务标题",
+    "titleRequired": "标题 *",
+    "descriptionLabel": "描述",
+    "descriptionPlaceholder": "任务描述（可选）",
+    "createWithSession": "同时创建 Branch + 会话",
+    "project": "项目",
+    "projectSelect": "选择项目",
+    "baseBranch": "基础分支",
+    "branchName": "分支名称",
+    "branchPlaceholder": "feat/my-feature",
+    "sessionType": "会话类型",
+    "sshHost": "SSH 主机（可选）",
+    "createTitle": "创建新任务",
+    "deleteConfirm": "确定要删除此任务吗？"
+  },
+  "branch": {
+    "title": "创建分支",
+    "projectRequired": "项目 *",
+    "noProjects": "无已注册项目",
+    "baseBranch": "基础分支",
+    "newBranchName": "新分支名称 *",
+    "branchPlaceholder": "feat/my-feature",
+    "sessionType": "会话类型",
+    "submit": "创建分支",
+    "submitting": "创建中...",
+    "validationError": "项目和分支名称为必填项。",
+    "failedError": "创建分支失败。"
+  },
+  "contextMenu": {
+    "branchOff": "创建分支",
+    "delete": "删除"
+  },
+  "settings": {
+    "title": "项目管理",
+    "scanTitle": "目录扫描",
+    "scanPathPlaceholder": "要扫描的目录路径（例如：~/Documents）",
+    "scanButton": "扫描并注册",
+    "scanning": "扫描中...",
+    "registered": "已注册",
+    "skipped": "已跳过",
+    "skippedSuffix": "个（已注册）",
+    "errors": "错误",
+    "errorsSuffix": "个",
+    "registeredCount": "已注册 {count} 个项目",
+    "noNewProjects": "没有新项目可注册。",
+    "noGitRepos": "未找到 git 仓库。",
+    "scanPathRequired": "请输入要扫描的目录路径。",
+    "projectList": "已注册项目",
+    "noProjects": "没有已注册的项目。",
+    "defaultBranch": "默认分支",
+    "deleteProject": "删除",
+    "deleteConfirm": "确定要删除 \"{name}\" 吗？"
+  },
+  "taskDetail": {
+    "backToBoard": "返回看板",
+    "moveToTodo": "移至待办",
+    "moveToProgress": "移至进行中",
+    "moveToReview": "移至审核",
+    "moveToDone": "移至完成",
+    "delete": "删除",
+    "terminal": "终端",
+    "noTerminal": "此任务没有关联的终端会话。"
+  }
+}
