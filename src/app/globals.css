@@ -1,26 +1,189 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Primitive: Gray */
+  --gray-50: #FAFAFA;
+  --gray-100: #F5F5F5;
+  --gray-200: #EEEEEE;
+  --gray-300: #E0E0E0;
+  --gray-400: #BDBDBD;
+  --gray-500: #9E9E9E;
+  --gray-600: #757575;
+  --gray-700: #616161;
+  --gray-800: #424242;
+  --gray-900: #212121;
+
+  /* Primitive: Google Blue */
+  --blue-50: #E8F0FE;
+  --blue-100: #D2E3FC;
+  --blue-200: #AECBFA;
+  --blue-300: #8AB4F8;
+  --blue-400: #669DF6;
+  --blue-500: #4285F4;
+  --blue-600: #1A73E8;
+  --blue-700: #1967D2;
+  --blue-800: #185ABC;
+  --blue-900: #174EA6;
+
+  /* Primitive: Google Red */
+  --red-50: #FCE8E6;
+  --red-100: #FAD2CF;
+  --red-300: #F28B82;
+  --red-500: #EA4335;
+  --red-600: #D93025;
+  --red-700: #C5221F;
+
+  /* Primitive: Google Yellow */
+  --yellow-50: #FEF7E0;
+  --yellow-100: #FEEFC3;
+  --yellow-300: #FDD663;
+  --yellow-500: #FBBC05;
+  --yellow-600: #F9AB00;
+
+  /* Primitive: Google Green */
+  --green-50: #E6F4EA;
+  --green-100: #CEEAD6;
+  --green-300: #81C995;
+  --green-500: #34A853;
+  --green-600: #1E8E3E;
+  --green-700: #188038;
+
+  /* Semantic: Brand */
+  --color-brand-primary: var(--blue-500);
+  --color-brand-hover: var(--blue-600);
+  --color-brand-active: var(--blue-700);
+  --color-brand-subtle: var(--blue-50);
+  --color-brand-muted: var(--blue-100);
+
+  /* Semantic: Background */
+  --color-bg-page: var(--gray-50);
+  --color-bg-surface: #FFFFFF;
+  --color-bg-overlay: rgba(0, 0, 0, 0.5);
+
+  /* Semantic: Text */
+  --color-text-primary: #202124;
+  --color-text-secondary: #5F6368;
+  --color-text-muted: #9AA0A6;
+  --color-text-inverse: #FFFFFF;
+  --color-text-brand: var(--blue-600);
+  --color-text-link: var(--blue-600);
+
+  /* Semantic: Border */
+  --color-border-default: #DADCE0;
+  --color-border-subtle: var(--gray-100);
+  --color-border-strong: var(--gray-400);
+  --color-border-brand: var(--blue-500);
+
+  /* Semantic: Status */
+  --color-status-todo: var(--gray-500);
+  --color-status-progress: var(--yellow-500);
+  --color-status-review: var(--blue-500);
+  --color-status-done: var(--green-500);
+  --color-status-success: var(--green-500);
+  --color-status-warning: var(--yellow-500);
+  --color-status-error: var(--red-500);
+  --color-status-info: var(--blue-500);
+
+  /* Semantic: Tags - Agent */
+  --color-tag-claude-bg: var(--red-50);
+  --color-tag-claude-text: var(--red-600);
+  --color-tag-gemini-bg: var(--blue-50);
+  --color-tag-gemini-text: var(--blue-600);
+  --color-tag-codex-bg: var(--green-50);
+  --color-tag-codex-text: var(--green-600);
+  --color-tag-session-bg: var(--blue-50);
+  --color-tag-session-text: var(--blue-600);
+  --color-tag-ssh-bg: var(--green-50);
+  --color-tag-ssh-text: var(--green-600);
+  --color-tag-branch-bg: var(--gray-100);
+  --color-tag-branch-text: var(--gray-700);
+  --color-tag-neutral-bg: var(--gray-100);
+  --color-tag-neutral-text: var(--gray-600);
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Brand */
+  --color-brand-primary: var(--color-brand-primary);
+  --color-brand-hover: var(--color-brand-hover);
+  --color-brand-active: var(--color-brand-active);
+  --color-brand-subtle: var(--color-brand-subtle);
+  --color-brand-muted: var(--color-brand-muted);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Background */
+  --color-bg-page: var(--color-bg-page);
+  --color-bg-surface: var(--color-bg-surface);
+  --color-bg-overlay: var(--color-bg-overlay);
+
+  /* Text */
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-inverse: var(--color-text-inverse);
+  --color-text-brand: var(--color-text-brand);
+  --color-text-link: var(--color-text-link);
+
+  /* Border */
+  --color-border-default: var(--color-border-default);
+  --color-border-subtle: var(--color-border-subtle);
+  --color-border-strong: var(--color-border-strong);
+  --color-border-brand: var(--color-border-brand);
+
+  /* Status */
+  --color-status-todo: var(--color-status-todo);
+  --color-status-progress: var(--color-status-progress);
+  --color-status-review: var(--color-status-review);
+  --color-status-done: var(--color-status-done);
+  --color-status-success: var(--color-status-success);
+  --color-status-warning: var(--color-status-warning);
+  --color-status-error: var(--color-status-error);
+  --color-status-info: var(--color-status-info);
+
+  /* Tags */
+  --color-tag-claude-bg: var(--color-tag-claude-bg);
+  --color-tag-claude-text: var(--color-tag-claude-text);
+  --color-tag-gemini-bg: var(--color-tag-gemini-bg);
+  --color-tag-gemini-text: var(--color-tag-gemini-text);
+  --color-tag-codex-bg: var(--color-tag-codex-bg);
+  --color-tag-codex-text: var(--color-tag-codex-text);
+  --color-tag-session-bg: var(--color-tag-session-bg);
+  --color-tag-session-text: var(--color-tag-session-text);
+  --color-tag-ssh-bg: var(--color-tag-ssh-bg);
+  --color-tag-ssh-text: var(--color-tag-ssh-text);
+  --color-tag-branch-bg: var(--color-tag-branch-bg);
+  --color-tag-branch-text: var(--color-tag-branch-text);
+  --color-tag-neutral-bg: var(--color-tag-neutral-bg);
+  --color-tag-neutral-text: var(--color-tag-neutral-text);
+
+  /* Shadows */
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
+  /* Font */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg-page);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
 }
