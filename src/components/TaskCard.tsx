@@ -50,7 +50,6 @@ export default function TaskCard({ task, index, onContextMenu, projectName }: Ta
                 </span>
               )}
 
-
               {task.prUrl && (
                 <span
                   role="link"
