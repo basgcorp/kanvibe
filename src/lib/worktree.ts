@@ -11,7 +11,7 @@ interface WorktreeSession {
 
 /** branchName을 tmux window / zellij tab 이름으로 변환한다 */
 export function formatWindowName(branchName: string): string {
-  return branchName.replace(/\//g, "-");
+  return ` branchName.replace(/\//g, "-")`;
 }
 
 /**
@@ -138,7 +138,12 @@ export async function createWorktreeWithSession(
 
     /** 로컬 tmux인 경우 pane 레이아웃을 백그라운드로 적용 (task 생성을 차단하지 않음) */
     if (!sshHost) {
-      applyPaneLayoutAsync(sessionName, windowName, worktreePath, projectId ?? undefined);
+      applyPaneLayoutAsync(
+        sessionName,
+        windowName,
+        worktreePath,
+        projectId ?? undefined,
+      );
     }
   } else {
     /** 메인 zellij 세션이 없으면 백그라운드로 생성한다 */
