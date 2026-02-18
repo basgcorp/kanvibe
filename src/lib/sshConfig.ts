@@ -1,4 +1,5 @@
 import { readFile } from "fs/promises";
+import { existsSync } from "fs";
 import { homedir } from "os";
 import path from "path";
 
@@ -64,13 +65,26 @@ export async function parseSSHConfig(): Promise<SSHHostConfig[]> {
   return hosts;
 }
 
+/** OpenSSH 우선순위에 따라 첫 번째로 존재하는 기본 비밀키 경로를 반환한다 */
+export function findDefaultPrivateKey(): string {
+  const sshDir = path.join(homedir(), ".ssh");
+  const candidates = ["id_ed25519", "id_ecdsa", "id_rsa", "id_dsa"];
+
+  for (const name of candidates) {
+    const keyPath = path.join(sshDir, name);
+    if (existsSync(keyPath)) return keyPath;
+  }
+
+  return path.join(sshDir, "id_ed25519");
+}
+
 function fillDefaults(partial: Partial<SSHHostConfig>): SSHHostConfig {
   return {
     host: partial.host!,
     hostname: partial.hostname!,
     port: partial.port || 22,
     username: partial.username || "root",
-    privateKeyPath: partial.privateKeyPath || path.join(homedir(), ".ssh", "id_rsa"),
+    privateKeyPath: partial.privateKeyPath || findDefaultPrivateKey(),
   };
 }
 

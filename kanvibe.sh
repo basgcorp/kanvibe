@@ -35,6 +35,7 @@ detect_locale() {
 }
 
 LOCALE=$(detect_locale)
+LOCALE=en
 
 # ── OS / 패키지 매니저 감지 ───────────────────────────────────
 detect_pkg_manager() {
@@ -897,7 +898,7 @@ cmd_start() {
     exit 1
   fi
   start_log
-  if ! docker compose up -d db >> "$LOG_FILE" 2>&1; then
+  if ! docker compose up -d >> "$LOG_FILE" 2>&1; then
     stop_log
     printf "  ${CROSS} $(msg step_db_fail)\n\n"
     exit 1
@@ -937,17 +938,24 @@ cmd_start() {
   stop_log
   step_done 5 $total "$(msg step_build)"
 
-  # 6. 서버 시작 — 실행 모드 선택
+  # 6. 서버 시작
   step 6 $total "$(msg step_server)"
-  echo ""
-  printf "  $(msg run_mode_prompt)\n"
-  printf "    ${BOLD}1)${NC} $(msg run_fg)\n"
-  printf "    ${BOLD}2)${NC} $(msg run_bg)\n"
-  printf "  ${ARROW} [1/2] "
-  read -r run_mode
 
   local LOG_FILE="$SCRIPT_DIR/logs/kanvibe.log"
   local app_port="${PORT:-3000}"
+
+  # --bg / -b 플래그가 있으면 프롬프트 없이 백그라운드 실행
+  local run_mode=""
+  if [ "$RUN_BG" = "true" ]; then
+    run_mode=2
+  else
+    echo ""
+    printf "  $(msg run_mode_prompt)\n"
+    printf "    ${BOLD}1)${NC} $(msg run_fg)\n"
+    printf "    ${BOLD}2)${NC} $(msg run_bg)\n"
+    printf "  ${ARROW} [1/2] "
+    read -r run_mode
+  fi
 
   case "${run_mode:-1}" in
     2)
@@ -966,10 +974,7 @@ cmd_start() {
       # 포그라운드 실행
       echo ""
       printf "  ${ARROW} $(msg access_url "$app_port")\n\n"
-      pnpm start &
-      local app_pid=$!
-      echo "$app_pid" > "$PID_FILE"
-      wait "$app_pid"
+      exec pnpm start
       ;;
   esac
 }
@@ -1017,14 +1022,30 @@ cmd_stop() {
 }
 
 # ── 메인 ─────────────────────────────────────────────────────
-case "${1:-}" in
+RUN_BG="false"
+CMD=""
+
+for arg in "$@"; do
+  case "$arg" in
+    --bg|-b) RUN_BG="true" ;;
+    start|stop) CMD="$arg" ;;
+    *)
+      print_header
+      printf "  $(msg unknown_cmd "$arg")\n\n"
+      exit 1
+      ;;
+  esac
+done
+
+case "${CMD:-}" in
   start) cmd_start ;;
   stop)  cmd_stop ;;
   *)
     print_header
     printf "  $(msg usage)\n\n"
-    printf "  ${BOLD}start${NC}   $(msg starting)\n"
-    printf "  ${BOLD}stop${NC}    $(msg stopping)\n\n"
+    printf "  ${BOLD}start${NC}        $(msg starting)\n"
+    printf "  ${BOLD}start --bg${NC}   $(msg run_bg)\n"
+    printf "  ${BOLD}stop${NC}         $(msg stopping)\n\n"
     exit 1
     ;;
 esac

@@ -1,5 +1,6 @@
 import { readFile, writeFile, mkdir, chmod, access } from "fs/promises";
 import path from "path";
+import { remoteMkdir, remoteWriteFile, remoteChmod, remoteFileExists, remoteReadFile } from "@/lib/remoteFileOps";
 
 /** UserPromptSubmit hook bash 스크립트를 생성한다 */
 function generatePromptHookScript(kanvibeUrl: string, projectName: string): string {
@@ -230,6 +231,108 @@ export async function getClaudeHooksStatus(repoPath: string): Promise<ClaudeHook
   let hasSettingsEntry = false;
   try {
     const settings = await readSettingsJson(settingsPath);
+    const hooks = settings.hooks as Record<string, unknown[]> | undefined;
+    if (hooks) {
+      const hasPrompt = hasKanvibeHook(hooks.UserPromptSubmit || [], "kanvibe-prompt-hook.sh");
+      const hasStop = hasKanvibeHook(hooks.Stop || [], "kanvibe-stop-hook.sh");
+      const hasQuestion = hasKanvibeHook(hooks.PreToolUse || [], "kanvibe-question-hook.sh");
+      const hasAnswerResume = hasKanvibeHook(hooks.PostToolUse || [], "kanvibe-prompt-hook.sh");
+      hasSettingsEntry = hasPrompt && hasStop && hasQuestion && hasAnswerResume;
+    }
+  } catch {
+    /* settings.json 없음 */
+  }
+
+  const installed = promptScriptExists && stopScriptExists && questionScriptExists && hasSettingsEntry;
+
+  return {
+    installed,
+    hasPromptHook: promptScriptExists,
+    hasStopHook: stopScriptExists,
+    hasQuestionHook: questionScriptExists,
+    hasSettingsEntry,
+  };
+}
+
+/** SSH를 통해 원격 repo에 Claude Code hooks를 설정한다 */
+export async function setupClaudeHooksRemote(
+  sshHost: string,
+  repoPath: string,
+  projectName: string,
+  kanvibeUrl: string
+): Promise<void> {
+  const hooksDir = `${repoPath}/.claude/hooks`;
+  const settingsPath = `${repoPath}/.claude/settings.json`;
+
+  await remoteMkdir(sshHost, hooksDir);
+
+  await remoteWriteFile(sshHost, `${hooksDir}/kanvibe-prompt-hook.sh`, generatePromptHookScript(kanvibeUrl, projectName));
+  await remoteWriteFile(sshHost, `${hooksDir}/kanvibe-stop-hook.sh`, generateStopHookScript(kanvibeUrl, projectName));
+  await remoteWriteFile(sshHost, `${hooksDir}/kanvibe-question-hook.sh`, generateQuestionHookScript(kanvibeUrl, projectName));
+  await remoteChmod(sshHost, `${hooksDir}/kanvibe-prompt-hook.sh`, "755");
+  await remoteChmod(sshHost, `${hooksDir}/kanvibe-stop-hook.sh`, "755");
+  await remoteChmod(sshHost, `${hooksDir}/kanvibe-question-hook.sh`, "755");
+
+  let settings: ClaudeSettings = {};
+  try {
+    const content = await remoteReadFile(sshHost, settingsPath);
+    settings = JSON.parse(content);
+  } catch {
+    /* settings.json 없음 */
+  }
+
+  if (!settings.hooks) {
+    settings.hooks = {};
+  }
+
+  const hooks = settings.hooks as Record<string, unknown[]>;
+
+  if (!hooks.UserPromptSubmit) hooks.UserPromptSubmit = [];
+  if (!hasKanvibeHook(hooks.UserPromptSubmit, "kanvibe-prompt-hook.sh")) {
+    (hooks.UserPromptSubmit as HookEntry[]).push({
+      hooks: [{ type: "command", command: ".claude/hooks/kanvibe-prompt-hook.sh", timeout: 10 }],
+    });
+  }
+
+  if (!hooks.PreToolUse) hooks.PreToolUse = [];
+  if (!hasKanvibeHook(hooks.PreToolUse, "kanvibe-question-hook.sh")) {
+    (hooks.PreToolUse as MatcherHookEntry[]).push({
+      matcher: "AskUserQuestion",
+      hooks: [{ type: "command", command: ".claude/hooks/kanvibe-question-hook.sh", timeout: 10 }],
+    });
+  }
+
+  if (!hooks.PostToolUse) hooks.PostToolUse = [];
+  if (!hasKanvibeHook(hooks.PostToolUse, "kanvibe-prompt-hook.sh")) {
+    (hooks.PostToolUse as MatcherHookEntry[]).push({
+      matcher: "AskUserQuestion",
+      hooks: [{ type: "command", command: ".claude/hooks/kanvibe-prompt-hook.sh", timeout: 10 }],
+    });
+  }
+
+  if (!hooks.Stop) hooks.Stop = [];
+  if (!hasKanvibeHook(hooks.Stop, "kanvibe-stop-hook.sh")) {
+    (hooks.Stop as HookEntry[]).push({
+      hooks: [{ type: "command", command: ".claude/hooks/kanvibe-stop-hook.sh", timeout: 10 }],
+    });
+  }
+
+  await remoteWriteFile(sshHost, settingsPath, JSON.stringify(settings, null, 2) + "\n");
+}
+
+/** SSH를 통해 원격 repo의 Claude Code hooks 설치 상태를 확인한다 */
+export async function getClaudeHooksStatusRemote(sshHost: string, repoPath: string): Promise<ClaudeHooksStatus> {
+  const hooksDir = `${repoPath}/.claude/hooks`;
+  const settingsPath = `${repoPath}/.claude/settings.json`;
+
+  const promptScriptExists = await remoteFileExists(sshHost, `${hooksDir}/kanvibe-prompt-hook.sh`);
+  const stopScriptExists = await remoteFileExists(sshHost, `${hooksDir}/kanvibe-stop-hook.sh`);
+  const questionScriptExists = await remoteFileExists(sshHost, `${hooksDir}/kanvibe-question-hook.sh`);
+
+  let hasSettingsEntry = false;
+  try {
+    const content = await remoteReadFile(sshHost, settingsPath);
+    const settings: ClaudeSettings = JSON.parse(content);
     const hooks = settings.hooks as Record<string, unknown[]> | undefined;
     if (hooks) {
       const hasPrompt = hasKanvibeHook(hooks.UserPromptSubmit || [], "kanvibe-prompt-hook.sh");

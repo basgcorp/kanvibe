@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useRef } from "react";
+import { useTranslations } from "next-intl";
 
 export interface TaskStatusNotification {
   projectName: string;
@@ -14,6 +15,7 @@ export interface TaskStatusNotification {
 
 /** hooks 경유 task 상태 변경 시 Browser Notification을 발송하는 훅 */
 export function useTaskNotification() {
+  const t = useTranslations("notification");
   const isPermissionGranted = useRef(false);
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export function useTaskNotification() {
       if (!isPermissionGranted.current) return;
 
       const title = `${payload.projectName} — ${payload.branchName}`;
-      const bodyParts = [`${payload.taskTitle}: ${payload.newStatus}로 변경`];
+      const bodyParts = [t("statusChanged", { title: payload.taskTitle, status: payload.newStatus })];
       if (payload.description) {
         bodyParts.push(payload.description);
       }

@@ -51,7 +51,7 @@ describe("HooksStatusCard", () => {
     );
   };
 
-  it("should not render signal button when isRemote is true", () => {
+  it("should render signal button even when isRemote is true", () => {
     // Given
     const props = {
       taskId: "task-1",
@@ -64,10 +64,8 @@ describe("HooksStatusCard", () => {
     // When
     renderCard(props);
 
-    // Then - Signal button should not exist (check for status text)
-    expect(screen.queryByText("All OK")).toBeNull();
-    expect(screen.queryByText("Not Installed")).toBeNull();
-    expect(screen.queryByText("Partial")).toBeNull();
+    // Then - Signal button should be rendered for remote projects too
+    expect(screen.getByText("Not Installed")).toBeTruthy();
   });
 
   it("should render signal button showing overall status when isRemote is false", () => {
@@ -201,7 +199,7 @@ describe("HooksStatusCard", () => {
     expect(dialog.textContent).toContain(`taskId=${taskId}`);
   });
 
-  it("should pass isRemote=true to dialog", () => {
+  it("should open dialog when signal button is clicked for remote project", () => {
     // Given
     const props = {
       taskId: "task-1",
@@ -213,14 +211,14 @@ describe("HooksStatusCard", () => {
 
     // When
     renderCard(props);
+    const signalButton = screen.getByText("Not Installed");
+    fireEvent.click(signalButton);
 
-    // Then - When isRemote is true, signal button should not be rendered
-    expect(screen.queryByText("All OK")).toBeNull();
-    expect(screen.queryByText("Not Installed")).toBeNull();
-    expect(screen.queryByText("Partial")).toBeNull();
+    // Then - Dialog should open for remote projects
+    expect(screen.getByTestId("hooks-status-dialog")).toBeTruthy();
   });
 
-  it("should not render dialog when isRemote is true", () => {
+  it("should render dialog component when isRemote is true (dialog hidden by default)", () => {
     // Given
     const props = {
       taskId: "task-1",
@@ -233,7 +231,7 @@ describe("HooksStatusCard", () => {
     // When
     renderCard(props);
 
-    // Then
+    // Then - Dialog is not visible until clicked (isOpen=false)
     expect(screen.queryByTestId("hooks-status-dialog")).toBeNull();
   });
 

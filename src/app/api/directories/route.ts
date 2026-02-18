@@ -10,7 +10,9 @@ export async function GET(request: Request) {
   const sshHost = searchParams.get("sshHost") || null;
 
   const resolvedPath = parentPath.startsWith("~")
-    ? parentPath.replace(/^~/, homedir())
+    ? sshHost
+      ? parentPath.replace(/^~/, "$HOME")
+      : parentPath.replace(/^~/, homedir())
     : parentPath;
 
   try {
@@ -30,7 +32,8 @@ export async function GET(request: Request) {
       .filter((name) => !name.startsWith("."));
 
     return NextResponse.json(dirs);
-  } catch {
-    return NextResponse.json([]);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

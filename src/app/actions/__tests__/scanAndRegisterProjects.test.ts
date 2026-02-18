@@ -57,7 +57,29 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
-const { listWorktrees } = await import("@/lib/gitOperations");
+const { listWorktrees, scanGitRepos } = await import("@/lib/gitOperations");
+
+describe("scanAndRegisterProjects — error propagation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockProjectFind.mockResolvedValue([]);
+  });
+
+  it("should collect scanGitRepos error into result.errors", async () => {
+    // Given
+    vi.mocked(scanGitRepos).mockRejectedValueOnce(new Error("SSH 키를 읽을 수 없습니다: /root/.ssh/id_ed25519"));
+
+    const { scanAndRegisterProjects } = await import("@/app/actions/project");
+
+    // When
+    const result = await scanAndRegisterProjects("/remote/path", "my-ssh-host");
+
+    // Then
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toContain("SSH 키를 읽을 수 없습니다");
+    expect(result.registered).toHaveLength(0);
+  });
+});
 
 describe("scanAndRegisterProjects — baseBranch", () => {
   beforeEach(() => {

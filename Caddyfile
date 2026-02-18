@@ -1,0 +1,17 @@
+:80 {
+	# WebSocket paths → WS server (port 4884)
+	@ws_terminal path /api/terminal/*
+	@ws_board    path /api/board/events
+
+	reverse_proxy @ws_terminal host.docker.internal:4884 {
+		header_up X-Forwarded-Proto https
+	}
+	reverse_proxy @ws_board host.docker.internal:4884 {
+		header_up X-Forwarded-Proto https
+	}
+
+	# Everything else → Next.js server (port 4885)
+	reverse_proxy host.docker.internal:4885 {
+		header_up X-Forwarded-Proto https
+	}
+}

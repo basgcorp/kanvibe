@@ -1,5 +1,6 @@
 import { readFile, writeFile, mkdir, chmod, access } from "fs/promises";
 import path from "path";
+import { remoteMkdir, remoteWriteFile, remoteChmod, remoteFileExists, remoteReadFile } from "@/lib/remoteFileOps";
 
 /**
  * Codex CLI는 현재 notify 설정의 agent-turn-complete 이벤트만 지원한다.
@@ -113,6 +114,68 @@ export async function getCodexHooksStatus(repoPath: string): Promise<CodexHooksS
   let hasConfigEntry = false;
   try {
     const configContent = await readConfigToml(configPath);
+    hasConfigEntry = hasKanvibeNotify(configContent);
+  } catch {
+    /* config.toml 없음 */
+  }
+
+  const installed = notifyScriptExists && hasConfigEntry;
+
+  return {
+    installed,
+    hasNotifyHook: notifyScriptExists,
+    hasConfigEntry,
+  };
+}
+
+/** SSH를 통해 원격 repo에 Codex CLI hooks를 설정한다 */
+export async function setupCodexHooksRemote(
+  sshHost: string,
+  repoPath: string,
+  projectName: string,
+  kanvibeUrl: string
+): Promise<void> {
+  const hooksDir = `${repoPath}/.codex/hooks`;
+  const configPath = `${repoPath}/.codex/${CONFIG_FILE_NAME}`;
+
+  await remoteMkdir(sshHost, hooksDir);
+
+  await remoteWriteFile(sshHost, `${hooksDir}/${HOOK_SCRIPT_NAME}`, generateNotifyHookScript(kanvibeUrl, projectName));
+  await remoteChmod(sshHost, `${hooksDir}/${HOOK_SCRIPT_NAME}`, "755");
+
+  let configContent = "";
+  try {
+    configContent = await remoteReadFile(sshHost, configPath);
+  } catch {
+    /* config.toml 없음 */
+  }
+
+  if (!hasKanvibeNotify(configContent)) {
+    const notifyLine = `notify = [".codex/hooks/${HOOK_SCRIPT_NAME}"]\n`;
+
+    if (configContent.trim().length === 0) {
+      await remoteWriteFile(sshHost, configPath, notifyLine);
+    } else {
+      if (/^notify\s*=/m.test(configContent)) {
+        const updated = configContent.replace(/^notify\s*=.*$/m, `notify = [".codex/hooks/${HOOK_SCRIPT_NAME}"]`);
+        await remoteWriteFile(sshHost, configPath, updated);
+      } else {
+        await remoteWriteFile(sshHost, configPath, configContent.trimEnd() + "\n" + notifyLine);
+      }
+    }
+  }
+}
+
+/** SSH를 통해 원격 repo의 Codex CLI hooks 설치 상태를 확인한다 */
+export async function getCodexHooksStatusRemote(sshHost: string, repoPath: string): Promise<CodexHooksStatus> {
+  const hooksDir = `${repoPath}/.codex/hooks`;
+  const configPath = `${repoPath}/.codex/${CONFIG_FILE_NAME}`;
+
+  const notifyScriptExists = await remoteFileExists(sshHost, `${hooksDir}/${HOOK_SCRIPT_NAME}`);
+
+  let hasConfigEntry = false;
+  try {
+    const configContent = await remoteReadFile(sshHost, configPath);
     hasConfigEntry = hasKanvibeNotify(configContent);
   } catch {
     /* config.toml 없음 */

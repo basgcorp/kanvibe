@@ -28,8 +28,11 @@ export function useAutoRefresh() {
   useEffect(() => {
     function connect() {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const port = parseInt(window.location.port || "4885", 10) - 1;
-      const wsUrl = `${protocol}//${window.location.hostname}:${port}/api/board/events`;
+      const explicitPort = window.location.port;
+      const wsOrigin = explicitPort
+        ? `${protocol}//${window.location.hostname}:${parseInt(explicitPort, 10) - 1}`
+        : `${protocol}//${window.location.hostname}`;
+      const wsUrl = `${wsOrigin}/api/board/events`;
 
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;

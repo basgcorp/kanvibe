@@ -26,6 +26,7 @@ export default function ProjectBranchTasksModal({
 }: ProjectBranchTasksModalProps) {
   const t = useTranslations("board.columns");
   const tc = useTranslations("common");
+  const tp = useTranslations("projectBranchTasks");
   const router = useRouter();
   const [tasksByStatus, setTasksByStatus] = useState<Record<TaskStatus, KanbanTask[]>>({
     [TaskStatus.TODO]: [],
@@ -84,8 +85,8 @@ export default function ProjectBranchTasksModal({
         {/* 헤더 */}
         <div className="flex items-center justify-between gap-2 p-6 border-b border-border-subtle bg-bg-surface">
           <div>
-            <h2 className="text-lg font-semibold text-text-primary">프로젝트 작업</h2>
-            <p className="text-xs text-text-secondary mt-1">총 {totalTasks}개</p>
+            <h2 className="text-lg font-semibold text-text-primary">{tp("title")}</h2>
+            <p className="text-xs text-text-secondary mt-1">{tp("totalCount", { count: totalTasks })}</p>
           </div>
           <button
             onClick={onClose}
@@ -108,7 +109,7 @@ export default function ProjectBranchTasksModal({
         {/* 본문 - Kanban 보드 */}
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-sm text-text-secondary">로딩 중...</p>
+            <p className="text-sm text-text-secondary">{tc("loading")}</p>
           </div>
         ) : (
           <div className="flex-1 overflow-x-auto p-6">
@@ -130,7 +131,7 @@ export default function ProjectBranchTasksModal({
                   <div className="space-y-2">
                     {tasksByStatus[column.status].length === 0 ? (
                       <div className="text-xs text-text-muted text-center py-8">
-                        작업 없음
+                        {tp("noTasks")}
                       </div>
                     ) : (
                       tasksByStatus[column.status].map((task) => (

@@ -141,24 +141,22 @@ export async function scanGitRepos(
   sshHost?: string | null
 ): Promise<string[]> {
   const resolvedPath = rootPath.startsWith("~")
-    ? rootPath.replace(/^~/, homedir())
+    ? sshHost
+      ? rootPath.replace(/^~/, "$HOME")
+      : rootPath.replace(/^~/, homedir())
     : rootPath;
 
-  try {
-    const output = await execGit(
-      `find "${resolvedPath}" -maxdepth 4 -name ".git" -type d 2>/dev/null`,
-      sshHost
-    );
+  const output = await execGit(
+    `find "${resolvedPath}" -maxdepth 4 -name ".git" -type d 2>/dev/null`,
+    sshHost
+  );
 
-    if (!output) return [];
+  if (!output) return [];
 
-    return output
-      .split("\n")
-      .filter(Boolean)
-      .map((gitDir) => gitDir.replace(/\/\.git$/, ""));
-  } catch {
-    return [];
-  }
+  return output
+    .split("\n")
+    .filter(Boolean)
+    .map((gitDir) => gitDir.replace(/\/\.git$/, ""));
 }
 
 export interface WorktreeInfo {
@@ -172,40 +170,36 @@ export async function listWorktrees(
   repoPath: string,
   sshHost?: string | null
 ): Promise<WorktreeInfo[]> {
-  try {
-    const output = await execGit(
-      `git -C "${repoPath}" worktree list --porcelain`,
-      sshHost
-    );
+  const output = await execGit(
+    `git -C "${repoPath}" worktree list --porcelain`,
+    sshHost
+  );
 
-    if (!output) return [];
+  if (!output) return [];
 
-    const worktrees: WorktreeInfo[] = [];
-    const blocks = output.split("\n\n").filter(Boolean);
+  const worktrees: WorktreeInfo[] = [];
+  const blocks = output.split("\n\n").filter(Boolean);
 
-    for (const block of blocks) {
-      const lines = block.split("\n");
-      let worktreePath = "";
-      let branch = "";
-      let isBare = false;
+  for (const block of blocks) {
+    const lines = block.split("\n");
+    let worktreePath = "";
+    let branch = "";
+    let isBare = false;
 
-      for (const line of lines) {
-        if (line.startsWith("worktree ")) {
-          worktreePath = line.replace("worktree ", "");
-        } else if (line.startsWith("branch ")) {
-          branch = line.replace("branch refs/heads/", "");
-        } else if (line === "bare") {
-          isBare = true;
-        }
-      }
-
-      if (worktreePath) {
-        worktrees.push({ path: worktreePath, branch, isBare });
+    for (const line of lines) {
+      if (line.startsWith("worktree ")) {
+        worktreePath = line.replace("worktree ", "");
+      } else if (line.startsWith("branch ")) {
+        branch = line.replace("branch refs/heads/", "");
+      } else if (line === "bare") {
+        isBare = true;
       }
     }
 
-    return worktrees;
-  } catch {
-    return [];
+    if (worktreePath) {
+      worktrees.push({ path: worktreePath, branch, isBare });
+    }
   }
+
+  return worktrees;
 }

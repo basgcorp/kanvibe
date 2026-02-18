@@ -1,5 +1,6 @@
 import { readFile, writeFile, mkdir, chmod, access } from "fs/promises";
 import path from "path";
+import { remoteMkdir, remoteWriteFile, remoteChmod, remoteFileExists, remoteReadFile } from "@/lib/remoteFileOps";
 
 /**
  * Gemini CLI hooks는 stdout에 반드시 JSON만 출력해야 한다.
@@ -189,6 +190,100 @@ export async function getGeminiHooksStatus(repoPath: string): Promise<GeminiHook
   let hasSettingsEntry = false;
   try {
     const settings = await readSettingsJson(settingsPath);
+    const hooks = settings.hooks as Record<string, unknown[]> | undefined;
+    if (hooks) {
+      const hasPrompt = hasKanvibeHook(hooks.BeforeAgent || [], "kanvibe-prompt-hook.sh");
+      const hasStop = hasKanvibeHook(hooks.AfterAgent || [], "kanvibe-stop-hook.sh");
+      hasSettingsEntry = hasPrompt && hasStop;
+    }
+  } catch {
+    /* settings.json 없음 */
+  }
+
+  const installed = promptScriptExists && stopScriptExists && hasSettingsEntry;
+
+  return {
+    installed,
+    hasPromptHook: promptScriptExists,
+    hasStopHook: stopScriptExists,
+    hasSettingsEntry,
+  };
+}
+
+/** SSH를 통해 원격 repo에 Gemini CLI hooks를 설정한다 */
+export async function setupGeminiHooksRemote(
+  sshHost: string,
+  repoPath: string,
+  projectName: string,
+  kanvibeUrl: string
+): Promise<void> {
+  const hooksDir = `${repoPath}/.gemini/hooks`;
+  const settingsPath = `${repoPath}/.gemini/settings.json`;
+
+  await remoteMkdir(sshHost, hooksDir);
+
+  await remoteWriteFile(sshHost, `${hooksDir}/kanvibe-prompt-hook.sh`, generatePromptHookScript(kanvibeUrl, projectName));
+  await remoteWriteFile(sshHost, `${hooksDir}/kanvibe-stop-hook.sh`, generateStopHookScript(kanvibeUrl, projectName));
+  await remoteChmod(sshHost, `${hooksDir}/kanvibe-prompt-hook.sh`, "755");
+  await remoteChmod(sshHost, `${hooksDir}/kanvibe-stop-hook.sh`, "755");
+
+  let settings: GeminiSettings = {};
+  try {
+    const content = await remoteReadFile(sshHost, settingsPath);
+    settings = JSON.parse(content);
+  } catch {
+    /* settings.json 없음 */
+  }
+
+  if (!settings.hooks) {
+    settings.hooks = {};
+  }
+
+  const hooks = settings.hooks as Record<string, unknown[]>;
+
+  if (!hooks.BeforeAgent) hooks.BeforeAgent = [];
+  if (!hasKanvibeHook(hooks.BeforeAgent, "kanvibe-prompt-hook.sh")) {
+    (hooks.BeforeAgent as GeminiHookEntry[]).push({
+      matcher: "*",
+      hooks: [{
+        name: "kanvibe-prompt",
+        type: "command",
+        command: "$GEMINI_PROJECT_DIR/.gemini/hooks/kanvibe-prompt-hook.sh",
+        timeout: 5000,
+        description: "KanVibe: 작업 시작 시 status를 progress로 변경",
+      }],
+    });
+  }
+
+  if (!hooks.AfterAgent) hooks.AfterAgent = [];
+  if (!hasKanvibeHook(hooks.AfterAgent, "kanvibe-stop-hook.sh")) {
+    (hooks.AfterAgent as GeminiHookEntry[]).push({
+      matcher: "*",
+      hooks: [{
+        name: "kanvibe-stop",
+        type: "command",
+        command: "$GEMINI_PROJECT_DIR/.gemini/hooks/kanvibe-stop-hook.sh",
+        timeout: 5000,
+        description: "KanVibe: 작업 완료 시 status를 review로 변경",
+      }],
+    });
+  }
+
+  await remoteWriteFile(sshHost, settingsPath, JSON.stringify(settings, null, 2) + "\n");
+}
+
+/** SSH를 통해 원격 repo의 Gemini CLI hooks 설치 상태를 확인한다 */
+export async function getGeminiHooksStatusRemote(sshHost: string, repoPath: string): Promise<GeminiHooksStatus> {
+  const hooksDir = `${repoPath}/.gemini/hooks`;
+  const settingsPath = `${repoPath}/.gemini/settings.json`;
+
+  const promptScriptExists = await remoteFileExists(sshHost, `${hooksDir}/kanvibe-prompt-hook.sh`);
+  const stopScriptExists = await remoteFileExists(sshHost, `${hooksDir}/kanvibe-stop-hook.sh`);
+
+  let hasSettingsEntry = false;
+  try {
+    const content = await remoteReadFile(sshHost, settingsPath);
+    const settings: GeminiSettings = JSON.parse(content);
     const hooks = settings.hooks as Record<string, unknown[]> | undefined;
     if (hooks) {
       const hasPrompt = hasKanvibeHook(hooks.BeforeAgent || [], "kanvibe-prompt-hook.sh");

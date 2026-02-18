@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import "@xterm/xterm/css/xterm.css";
 
 interface TerminalProps {
@@ -15,6 +16,7 @@ export default function Terminal({ taskId }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const xtermRef = useRef<import("@xterm/xterm").Terminal | null>(null);
+  const t = useTranslations("taskDetail");
 
   const connect = useCallback(async () => {
     if (!terminalRef.current) return;
@@ -79,13 +81,16 @@ export default function Terminal({ taskId }: TerminalProps) {
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsHost = window.location.hostname;
-    const wsPort = parseInt(window.location.port || "4885", 10) - 1;
-    const wsUrl = `${protocol}//${wsHost}:${wsPort}/api/terminal/${taskId}?cols=${term.cols}&rows=${term.rows}`;
+    const explicitPort = window.location.port;
+    const wsOrigin = explicitPort
+      ? `${protocol}//${wsHost}:${parseInt(explicitPort, 10) - 1}`
+      : `${protocol}//${wsHost}`;
+    const wsUrl = `${wsOrigin}/api/terminal/${taskId}?cols=${term.cols}&rows=${term.rows}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {
-      term.writeln("\x1b[32m터미널에 연결되었습니다.\x1b[0m\r\n");
+      term.writeln(`\x1b[32m${t("terminalConnected")}\x1b[0m\r\n`);
 
       /** 초기 크기를 서버에 전달 */
       const resizeMsg = JSON.stringify({
@@ -101,11 +106,11 @@ export default function Terminal({ taskId }: TerminalProps) {
     };
 
     ws.onclose = () => {
-      term.writeln("\r\n\x1b[31m연결이 종료되었습니다.\x1b[0m");
+      term.writeln(`\r\n\x1b[31m${t("terminalDisconnected")}\x1b[0m`);
     };
 
     ws.onerror = () => {
-      term.writeln("\r\n\x1b[31m연결 오류가 발생했습니다.\x1b[0m");
+      term.writeln(`\r\n\x1b[31m${t("terminalError")}\x1b[0m`);
     };
 
     term.onData((data) => {
@@ -139,7 +144,7 @@ export default function Terminal({ taskId }: TerminalProps) {
       ws.close();
       term.dispose();
     };
-  }, [taskId]);
+  }, [taskId, t]);
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;

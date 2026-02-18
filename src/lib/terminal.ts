@@ -249,6 +249,7 @@ export async function attachRemoteSession(
   sshConfig: { hostname: string; port: number; username: string; privateKeyPath: string },
   cols?: number,
   rows?: number,
+  remoteShell?: string | null,
 ): Promise<void> {
   const initialCols = cols ?? 120;
   const initialRows = rows ?? 30;
@@ -272,11 +273,15 @@ export async function attachRemoteSession(
         return;
       }
 
+      if (remoteShell) {
+        stream.write(`exec ${remoteShell} -l\n`);
+      }
+
       stream.write(command + "\n");
 
       stream.on("data", (data: Buffer) => {
         if (ws.readyState === ws.OPEN) {
-          ws.send(data);
+          ws.send(data.toString("utf-8"));
         }
       });
 

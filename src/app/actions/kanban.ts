@@ -9,7 +9,8 @@ import { KanbanTask, TaskStatus, SessionType } from "@/entities/KanbanTask";
 import { TaskPriority } from "@/entities/TaskPriority";
 import { createWorktreeWithSession, removeWorktreeAndSession, removeWorktreeAndBranch, createSessionWithoutWorktree, removeSessionOnly } from "@/lib/worktree";
 import { getProjectRepository } from "@/lib/database";
-import { setupClaudeHooks } from "@/lib/claudeHooksSetup";
+import { setupClaudeHooks, setupClaudeHooksRemote } from "@/lib/claudeHooksSetup";
+import { getKanvibeUrl } from "@/lib/kanvibeUrl";
 
 const execAsync = promisify(exec);
 
@@ -147,10 +148,18 @@ export async function createTask(input: CreateTaskInput): Promise<KanbanTask> {
         task.sshHost = project.sshHost;
         task.status = TaskStatus.PROGRESS;
 
-        /** 로컬 worktree에 Claude Code hooks를 자동 설정한다 */
-        if (!project.sshHost && session.worktreePath) {
-          const kanvibeUrl = `http://localhost:${process.env.PORT || 4885}`;
-          await setupClaudeHooks(session.worktreePath, project.name, kanvibeUrl);
+        /** worktree에 Claude Code hooks를 자동 설정한다 (로컬 + 원격) */
+        if (session.worktreePath) {
+          try {
+            const kanvibeUrl = getKanvibeUrl(!!project.sshHost);
+            if (project.sshHost) {
+              await setupClaudeHooksRemote(project.sshHost, session.worktreePath, project.name, kanvibeUrl);
+            } else {
+              await setupClaudeHooks(session.worktreePath, project.name, kanvibeUrl);
+            }
+          } catch (hookError) {
+            console.error("Claude hooks 설정 실패:", hookError);
+          }
         }
       }
     } catch (error) {
@@ -335,11 +344,15 @@ export async function branchFromTask(
   task.sshHost = project.sshHost;
   task.status = TaskStatus.PROGRESS;
 
-  /** 로컬 worktree에 Claude Code hooks를 자동 설정한다 */
-  if (!project.sshHost && session.worktreePath) {
+  /** worktree에 Claude Code hooks를 자동 설정한다 (로컬 + 원격) */
+  if (session.worktreePath) {
     try {
-      const kanvibeUrl = `http://localhost:${process.env.PORT || 4885}`;
-      await setupClaudeHooks(session.worktreePath, project.name, kanvibeUrl);
+      const kanvibeUrl = getKanvibeUrl(!!project.sshHost);
+      if (project.sshHost) {
+        await setupClaudeHooksRemote(project.sshHost, session.worktreePath, project.name, kanvibeUrl);
+      } else {
+        await setupClaudeHooks(session.worktreePath, project.name, kanvibeUrl);
+      }
     } catch (error) {
       console.error("Claude hooks 설정 실패:", error);
     }

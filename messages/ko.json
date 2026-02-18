@@ -122,7 +122,12 @@
     "notificationEnabled": "브라우저 알림",
     "notificationEnabledDescription": "작업 상태 변경 시 브라우저 알림을 받습니다.",
     "notificationStatusFilter": "알림 받을 상태",
-    "notificationStatusFilterDescription": "선택한 상태로 변경될 때만 알림을 받습니다."
+    "notificationStatusFilterDescription": "선택한 상태로 변경될 때만 알림을 받습니다.",
+    "remoteShell": "원격 셸",
+    "remoteShellPlaceholder": "/bin/bash (비워두면 서버 기본값)",
+    "hooksPublicUrlRequired": "원격 hooks 설치를 위해 KANVIBE_PUBLIC_URL 설정 필요",
+    "scanFailed": "스캔 중 오류가 발생했습니다.",
+    "folderFetchError": "폴더 목록을 가져올 수 없습니다."
   },
   "paneLayout": {
     "title": "Pane 레이아웃 설정",
@@ -177,6 +182,9 @@
     "connecting": "연결 중...",
     "selectSessionType": "세션 타입",
     "connectFailed": "터미널 세션 생성에 실패했습니다. 서버 로그를 확인하세요.",
+    "terminalConnected": "터미널에 연결되었습니다.",
+    "terminalDisconnected": "연결이 종료되었습니다.",
+    "terminalError": "연결 오류가 발생했습니다.",
     "info": "작업 정보",
     "branch": "브랜치",
     "agent": "에이전트",
@@ -216,6 +224,11 @@
   },
   "projectBranchTasks": {
     "title": "프로젝트 작업",
+    "totalCount": "총 {count}개",
+    "viewOtherTasks": "다른 작업 보기",
     "noTasks": "이 프로젝트에는 작업이 없습니다"
+  },
+  "notification": {
+    "statusChanged": "{title}: {status}로 변경"
   }
 }

@@ -81,7 +81,7 @@ describe("HooksStatusDialog", () => {
     expect(screen.getByText("Claude")).toBeTruthy();
   });
 
-  it("should show remote not supported message when isRemote is true", () => {
+  it("should show install buttons for remote projects", () => {
     // Given
     const props = {
       isOpen: true,
@@ -96,9 +96,9 @@ describe("HooksStatusDialog", () => {
     // When
     renderDialog(props);
 
-    // Then
-    const remoteMessages = screen.getAllByText("hooksRemoteNotSupported");
-    expect(remoteMessages.length).toBeGreaterThan(0);
+    // Then - Remote projects now show install buttons instead of "not supported"
+    const installButtons = screen.getAllByText("installHooks");
+    expect(installButtons.length).toBe(3);
   });
 
   it("should call onClose when close button is clicked", () => {

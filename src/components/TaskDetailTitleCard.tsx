@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { KanbanTask } from "@/entities/KanbanTask";
 import TaskStatusBadge from "@/components/TaskStatusBadge";
 import ProjectBranchTasksModal from "@/components/ProjectBranchTasksModal";
@@ -10,6 +11,7 @@ interface TaskDetailTitleCardProps {
 }
 
 export default function TaskDetailTitleCard({ task }: TaskDetailTitleCardProps) {
+  const tp = useTranslations("projectBranchTasks");
   const [showBranchTasksModal, setShowBranchTasksModal] = useState(false);
 
   return (
@@ -27,7 +29,7 @@ export default function TaskDetailTitleCard({ task }: TaskDetailTitleCardProps) 
               onClick={() => setShowBranchTasksModal(true)}
               className="flex-shrink-0 w-6 h-6 rounded-full bg-tag-project-bg hover:opacity-80 text-tag-project-text flex items-center justify-center transition-opacity"
               aria-label="View other tasks in this project"
-              title="다른 작업 보기"
+              title={tp("viewOtherTasks")}
             >
               <svg
                 width="16"

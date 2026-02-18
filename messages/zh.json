@@ -122,7 +122,12 @@
     "notificationEnabled": "浏览器通知",
     "notificationEnabledDescription": "任务状态变更时接收浏览器通知。",
     "notificationStatusFilter": "通知状态",
-    "notificationStatusFilterDescription": "仅在任务变更为所选状态时接收通知。"
+    "notificationStatusFilterDescription": "仅在任务变更为所选状态时接收通知。",
+    "remoteShell": "远程 Shell",
+    "remoteShellPlaceholder": "/bin/bash (留空 = 服务器默认)",
+    "hooksPublicUrlRequired": "安装远程 hooks 需设置 KANVIBE_PUBLIC_URL",
+    "scanFailed": "扫描过程中发生错误。",
+    "folderFetchError": "无法获取文件夹列表。"
   },
   "paneLayout": {
     "title": "面板布局设置",
@@ -177,6 +182,9 @@
     "connecting": "连接中...",
     "selectSessionType": "会话类型",
     "connectFailed": "终端会话创建失败。请检查服务器日志。",
+    "terminalConnected": "已连接到终端。",
+    "terminalDisconnected": "连接已断开。",
+    "terminalError": "发生连接错误。",
     "info": "任务信息",
     "branch": "分支",
     "agent": "代理",
@@ -216,6 +224,11 @@
   },
   "projectBranchTasks": {
     "title": "项目任务",
+    "totalCount": "共 {count} 个",
+    "viewOtherTasks": "查看其他任务",
     "noTasks": "此项目中没有任务"
+  },
+  "notification": {
+    "statusChanged": "{title}: 已变更为 {status}"
   }
 }

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import {
   deleteProject,
   scanAndRegisterProjects,
+  updateProjectRemoteShell,
   type ScanResult,
 } from "@/app/actions/project";
 import {
@@ -82,6 +83,8 @@ export default function ProjectSettings({
         setSuccessMessage(messages.join(" / "));
       } else if (result.skipped.length > 0) {
         setSuccessMessage(t("noNewProjects"));
+      } else if (result.errors.length > 0) {
+        setError(t("scanFailed"));
       } else {
         setError(t("noGitRepos"));
       }
@@ -276,8 +279,11 @@ export default function ProjectSettings({
                 </div>
               )}
               {scanResult.errors.length > 0 && (
-                <div className="text-xs text-status-error">
-                  {t("errors")}: {scanResult.errors.length}{t("errorsSuffix")}
+                <div className="text-xs text-status-error space-y-0.5">
+                  <div>{t("errors")}: {scanResult.errors.length}{t("errorsSuffix")}</div>
+                  {scanResult.errors.map((err, i) => (
+                    <div key={i} className="font-mono text-[10px] opacity-80 pl-2">{err}</div>
+                  ))}
                 </div>
               )}
             </div>
@@ -332,6 +338,28 @@ export default function ProjectSettings({
                         {t("deleteProject")}
                       </button>
                     </div>
+                    {project.sshHost && (
+                      <div className="mt-1.5">
+                        <label className="text-[10px] text-text-muted uppercase tracking-wide">
+                          {t("remoteShell")}
+                        </label>
+                        <input
+                          type="text"
+                          defaultValue={project.remoteShell || ""}
+                          placeholder={t("remoteShellPlaceholder")}
+                          onBlur={(e) => {
+                            const value = e.target.value.trim();
+                            const current = project.remoteShell || "";
+                            if (value !== current) {
+                              startTransition(async () => {
+                                await updateProjectRemoteShell(project.id, value || null);
+                              });
+                            }
+                          }}
+                          className="w-full mt-0.5 px-2 py-1 text-xs bg-bg-surface border border-border-default rounded text-text-primary font-mono focus:outline-none focus:border-brand-primary transition-colors"
+                        />
+                      </div>
+                    )}
                   </li>
                 );
               })}

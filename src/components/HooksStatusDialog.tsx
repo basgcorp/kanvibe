@@ -101,11 +101,7 @@ export default function HooksStatusDialog({
           {/* Claude Code Hooks */}
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs text-text-secondary font-medium">Claude</span>
-            {isRemote ? (
-              <span className="text-xs px-2 py-0.5 bg-bg-page border border-border-default rounded text-text-muted">
-                {t("hooksRemoteNotSupported")}
-              </span>
-            ) : localClaudeStatus?.installed ? (
+            {localClaudeStatus?.installed ? (
               <>
                 <span className="text-xs px-2 py-0.5 bg-status-done/15 text-status-done rounded">
                   {t("hooksInstalled")}
@@ -137,11 +133,7 @@ export default function HooksStatusDialog({
           {/* Gemini CLI Hooks */}
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs text-text-secondary font-medium">Gemini</span>
-            {isRemote ? (
-              <span className="text-xs px-2 py-0.5 bg-bg-page border border-border-default rounded text-text-muted">
-                {t("hooksRemoteNotSupported")}
-              </span>
-            ) : localGeminiStatus?.installed ? (
+            {localGeminiStatus?.installed ? (
               <>
                 <span className="text-xs px-2 py-0.5 bg-status-done/15 text-status-done rounded">
                   {t("hooksInstalled")}
@@ -173,11 +165,7 @@ export default function HooksStatusDialog({
           {/* Codex CLI Hooks */}
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs text-text-secondary font-medium">Codex</span>
-            {isRemote ? (
-              <span className="text-xs px-2 py-0.5 bg-bg-page border border-border-default rounded text-text-muted">
-                {t("hooksRemoteNotSupported")}
-              </span>
-            ) : localCodexStatus?.installed ? (
+            {localCodexStatus?.installed ? (
               <>
                 <span className="text-xs px-2 py-0.5 bg-status-done/15 text-status-done rounded">
                   {t("hooksInstalled")}

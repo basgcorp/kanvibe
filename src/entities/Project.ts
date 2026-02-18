@@ -33,6 +33,9 @@ export class Project {
   @Column({ name: "color", type: "varchar", length: 7, nullable: true, default: null })
   color!: string | null;
 
+  @Column({ name: "remote_shell", type: "varchar", length: 255, nullable: true, default: null })
+  remoteShell!: string | null;
+
   @CreateDateColumn({ name: "created_at" })
   createdAt!: Date;
 }

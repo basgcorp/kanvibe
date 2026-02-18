@@ -122,7 +122,12 @@
     "notificationEnabled": "Browser notifications",
     "notificationEnabledDescription": "Receive browser notifications when task status changes.",
     "notificationStatusFilter": "Notify for statuses",
-    "notificationStatusFilterDescription": "Only receive notifications when tasks change to selected statuses."
+    "notificationStatusFilterDescription": "Only receive notifications when tasks change to selected statuses.",
+    "remoteShell": "Remote Shell",
+    "remoteShellPlaceholder": "/bin/bash (blank = server default)",
+    "hooksPublicUrlRequired": "Set KANVIBE_PUBLIC_URL to install hooks on remote projects",
+    "scanFailed": "An error occurred during scanning.",
+    "folderFetchError": "Could not retrieve folder list."
   },
   "paneLayout": {
     "title": "Pane Layout Settings",
@@ -177,6 +182,9 @@
     "connecting": "Connecting...",
     "selectSessionType": "Session type",
     "connectFailed": "Failed to create terminal session. Check server logs.",
+    "terminalConnected": "Connected to terminal.",
+    "terminalDisconnected": "Connection closed.",
+    "terminalError": "A connection error occurred.",
     "info": "Task Info",
     "branch": "Branch",
     "agent": "Agent",
@@ -216,6 +224,11 @@
   },
   "projectBranchTasks": {
     "title": "Project Tasks",
+    "totalCount": "Total {count}",
+    "viewOtherTasks": "View other tasks",
     "noTasks": "No tasks in this project"
+  },
+  "notification": {
+    "statusChanged": "{title}: changed to {status}"
   }
 }

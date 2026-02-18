@@ -99,6 +99,7 @@ export default function FolderSearchInput({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -106,24 +107,36 @@ export default function FolderSearchInput({
 
   // inputValue에서 탐색할 부모 경로와 검색어를 파싱한다
   const lastSlash = inputValue.lastIndexOf("/");
-  const parentPath = lastSlash > 0 ? inputValue.substring(0, lastSlash) : "~";
+  const parentPath = lastSlash > 0
+    ? inputValue.substring(0, lastSlash)
+    : lastSlash === 0
+      ? "/"
+      : "~";
   const searchTerm = lastSlash >= 0 ? inputValue.substring(lastSlash + 1) : "";
 
   /** 지정 경로의 하위 디렉토리를 API에서 가져온다 */
   const fetchDirectories = useCallback(async (dirPath: string) => {
     setIsLoading(true);
+    setFetchError(null);
     try {
       const params = new URLSearchParams({ path: dirPath });
       if (sshHost) params.set("sshHost", sshHost);
       const res = await fetch(`/api/directories?${params}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        setFetchError(body?.error || t("folderFetchError"));
+        setDirectories([]);
+        return;
+      }
       const result: string[] = await res.json();
       setDirectories(result);
     } catch {
+      setFetchError(t("folderFetchError"));
       setDirectories([]);
     } finally {
       setIsLoading(false);
     }
-  }, [sshHost]);
+  }, [sshHost, t]);
 
   /** parentPath 변경 시 디렉토리 목록을 다시 가져온다 */
   useEffect(() => {
@@ -169,7 +182,7 @@ export default function FolderSearchInput({
 
   /** 폴더를 선택하여 확정한다 */
   function handleSelect(dirName: string) {
-    const fullPath = parentPath === "~" ? `~/${dirName}` : `${parentPath}/${dirName}`;
+    const fullPath = parentPath === "/" ? `/${dirName}` : `${parentPath}/${dirName}`;
     setSelectedPath(fullPath);
     setInputValue(fullPath);
     setIsOpen(false);
@@ -199,7 +212,7 @@ export default function FolderSearchInput({
         if (filteredDirs[selectedIndex]) {
           // Tab으로 하위 폴더에 진입: 선택한 폴더명 뒤에 /를 붙여 하위 탐색
           const dirName = filteredDirs[selectedIndex].path;
-          const newPath = parentPath === "~" ? `~/${dirName}/` : `${parentPath}/${dirName}/`;
+          const newPath = parentPath === "/" ? `/${dirName}/` : `${parentPath}/${dirName}/`;
           setInputValue(newPath);
           setSelectedIndex(0);
         }
@@ -246,6 +259,8 @@ export default function FolderSearchInput({
 
           {isLoading ? (
             <div className="px-3 py-2 text-xs text-text-muted">{t("loadingFolders")}</div>
+          ) : fetchError ? (
+            <div className="px-3 py-2 text-xs text-status-error">{fetchError}</div>
           ) : filteredDirs.length === 0 ? (
             <div className="px-3 py-2 text-xs text-text-muted">{t("noFoldersFound")}</div>
           ) : (

@@ -3,6 +3,15 @@ import { renderHook, cleanup, act } from "@testing-library/react";
 
 // --- Mocks ---
 
+vi.mock("next-intl", () => ({
+  useTranslations: () => (key: string, params?: Record<string, string>) => {
+    if (key === "statusChanged" && params) {
+      return `${params.title}: changed to ${params.status}`;
+    }
+    return key;
+  },
+}));
+
 const mockShowNotification = vi.fn().mockResolvedValue(undefined);
 
 const mockServiceWorkerRegistration = {
@@ -85,7 +94,7 @@ describe("useTaskNotification", () => {
     expect(mockShowNotification).toHaveBeenCalledWith(
       "kanvibe — feat/login",
       {
-        body: "로그인 구현: review로 변경\nOAuth 연동",
+        body: "로그인 구현: changed to review\nOAuth 연동",
         icon: "/kanvibe-logo.svg",
         data: { taskId: "task-123", locale: "ko" },
       }
@@ -117,7 +126,7 @@ describe("useTaskNotification", () => {
     expect(mockShowNotification).toHaveBeenCalledWith(
       "kanvibe — feat/test",
       {
-        body: "테스트 작업: progress로 변경",
+        body: "테스트 작업: changed to progress",
         icon: "/kanvibe-logo.svg",
         data: { taskId: "task-456", locale: "en" },
       }

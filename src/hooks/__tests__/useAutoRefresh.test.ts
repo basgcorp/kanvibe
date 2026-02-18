@@ -19,12 +19,14 @@ vi.mock("@/i18n/navigation", () => ({
 /** WebSocket 목 클래스. 인스턴스를 추적하여 테스트에서 메시지 수신을 시뮬레이션한다 */
 class MockWebSocket {
   static instances: MockWebSocket[] = [];
+  url: string;
   onmessage: ((event: MessageEvent) => void) | null = null;
   onclose: (() => void) | null = null;
   onerror: (() => void) | null = null;
   close = vi.fn();
 
-  constructor() {
+  constructor(url: string) {
+    this.url = url;
     MockWebSocket.instances.push(this);
   }
 }
@@ -135,5 +137,35 @@ describe("useAutoRefresh", () => {
 
     // Then
     expect(ws.close).toHaveBeenCalled();
+  });
+
+  it("should connect to port-1 when explicit port is present (direct access)", async () => {
+    // Given
+    Object.defineProperty(window, "location", {
+      value: { protocol: "http:", hostname: "localhost", port: "4885" },
+      writable: true,
+    });
+    const { useAutoRefresh } = await import("@/hooks/useAutoRefresh");
+
+    // When
+    renderHook(() => useAutoRefresh());
+
+    // Then
+    expect(MockWebSocket.instances[0].url).toBe("ws://localhost:4884/api/board/events");
+  });
+
+  it("should connect to same origin when no explicit port (behind reverse proxy)", async () => {
+    // Given
+    Object.defineProperty(window, "location", {
+      value: { protocol: "https:", hostname: "kanban.example.com", port: "" },
+      writable: true,
+    });
+    const { useAutoRefresh } = await import("@/hooks/useAutoRefresh");
+
+    // When
+    renderHook(() => useAutoRefresh());
+
+    // Then
+    expect(MockWebSocket.instances[0].url).toBe("wss://kanban.example.com/api/board/events");
   });
 });

@@ -4,7 +4,7 @@ import { parse } from "url";
 import next from "next";
 import { WebSocketServer, type WebSocket } from "ws";
 import { validateSessionFromCookie } from "@/lib/auth";
-import { getTaskRepository } from "@/lib/database";
+import { getTaskRepository, getProjectRepository } from "@/lib/database";
 import { attachLocalSession, attachRemoteSession } from "@/lib/terminal";
 import { formatWindowName } from "@/lib/worktree";
 import { parseSSHConfig } from "@/lib/sshConfig";
@@ -123,6 +123,14 @@ app.prepare().then(() => {
           return;
         }
 
+        /** 프로젝트의 remoteShell 설정을 조회한다 */
+        let remoteShell: string | null = null;
+        if (task.projectId) {
+          const projectRepo = await getProjectRepository();
+          const project = await projectRepo.findOneBy({ id: task.projectId });
+          remoteShell = project?.remoteShell ?? null;
+        }
+
         await attachRemoteSession(
           taskId,
           task.sshHost,
@@ -132,7 +140,8 @@ app.prepare().then(() => {
           ws,
           hostConfig,
           initialCols,
-          initialRows
+          initialRows,
+          remoteShell,
         );
       } else {
         await attachLocalSession(taskId, task.sessionType, task.sessionName, windowName, ws, task.worktreePath, initialCols, initialRows);
@@ -142,6 +151,22 @@ app.prepare().then(() => {
       ws.close(1011, "터미널 연결 실패");
     }
   });
+
+  /**
+   * 프로덕션 모드에서는 메인 HTTP 서버의 upgrade 이벤트를 가로채
+   * /api/terminal/* 및 /api/board/events 경로를 WebSocket 서버로 전달한다.
+   * 리버스 프록시 뒤에서 단일 포트만 노출해도 동작한다.
+   */
+  if (!dev) {
+    server.on("upgrade", (req, socket, head) => {
+      const pathname = req.url?.split("?")[0] || "";
+      if (pathname.startsWith("/api/terminal/") || pathname === "/api/board/events") {
+        wss.handleUpgrade(req, socket, head, (ws) => {
+          wss.emit("connection", ws, req);
+        });
+      }
+    });
+  }
 
   server.listen(port, hostname, () => {
     console.log(`> KanVibe 서버 시작: http://${hostname}:${port}`);

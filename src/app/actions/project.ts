@@ -7,9 +7,10 @@ import { validateGitRepo, getDefaultBranch, listBranches, scanGitRepos, listWork
 import { TaskStatus, SessionType } from "@/entities/KanbanTask";
 import { IsNull } from "typeorm";
 import { isWindowAlive, formatWindowName, createSessionWithoutWorktree } from "@/lib/worktree";
-import { setupClaudeHooks, getClaudeHooksStatus, type ClaudeHooksStatus } from "@/lib/claudeHooksSetup";
-import { setupGeminiHooks, getGeminiHooksStatus, type GeminiHooksStatus } from "@/lib/geminiHooksSetup";
-import { setupCodexHooks, getCodexHooksStatus, type CodexHooksStatus } from "@/lib/codexHooksSetup";
+import { setupClaudeHooks, getClaudeHooksStatus, setupClaudeHooksRemote, getClaudeHooksStatusRemote, type ClaudeHooksStatus } from "@/lib/claudeHooksSetup";
+import { setupGeminiHooks, getGeminiHooksStatus, setupGeminiHooksRemote, getGeminiHooksStatusRemote, type GeminiHooksStatus } from "@/lib/geminiHooksSetup";
+import { setupCodexHooks, getCodexHooksStatus, setupCodexHooksRemote, getCodexHooksStatusRemote, type CodexHooksStatus } from "@/lib/codexHooksSetup";
+import { getKanvibeUrl } from "@/lib/kanvibeUrl";
 import { homedir } from "os";
 import path from "path";
 
@@ -146,7 +147,13 @@ export async function scanAndRegisterProjects(
 ): Promise<ScanResult> {
   const result: ScanResult = { registered: [], skipped: [], errors: [], worktreeTasks: [], hooksSetup: [] };
 
-  const repoPaths = await scanGitRepos(rootPath, sshHost || null);
+  let repoPaths: string[];
+  try {
+    repoPaths = await scanGitRepos(rootPath, sshHost || null);
+  } catch (error) {
+    result.errors.push(error instanceof Error ? error.message : "스캔 실패");
+    return result;
+  }
   if (repoPaths.length === 0) {
     return result;
   }
@@ -211,19 +218,23 @@ export async function scanAndRegisterProjects(
         console.error(`${projectName} 기본 브랜치 태스크 생성 실패:`, taskError);
       }
 
-      /** 로컬 repo에 Claude Code / Gemini CLI / Codex CLI hooks를 자동 설정한다 */
-      if (!sshHost) {
-        try {
-          const kanvibeUrl = `http://localhost:${process.env.PORT || 4885}`;
+      /** Claude Code / Gemini CLI / Codex CLI hooks를 자동 설정한다 (로컬 + 원격) */
+      try {
+        const kanvibeUrl = getKanvibeUrl(!!sshHost);
+        if (sshHost) {
+          await setupClaudeHooksRemote(sshHost, repoPath, projectName, kanvibeUrl);
+          await setupGeminiHooksRemote(sshHost, repoPath, projectName, kanvibeUrl);
+          await setupCodexHooksRemote(sshHost, repoPath, projectName, kanvibeUrl);
+        } else {
           await setupClaudeHooks(repoPath, projectName, kanvibeUrl);
           await setupGeminiHooks(repoPath, projectName, kanvibeUrl);
           await setupCodexHooks(repoPath, projectName, kanvibeUrl);
-          result.hooksSetup.push(projectName);
-        } catch (hookError) {
-          result.errors.push(
-            `${projectName} hooks 설정 실패: ${hookError instanceof Error ? hookError.message : "알 수 없는 오류"}`
-          );
         }
+        result.hooksSetup.push(projectName);
+      } catch (hookError) {
+        result.errors.push(
+          `${projectName} hooks 설정 실패: ${hookError instanceof Error ? hookError.message : "알 수 없는 오류"}`
+        );
       }
     } catch (error) {
       result.errors.push(
@@ -335,25 +346,23 @@ export async function listSubdirectories(
   sshHost?: string
 ): Promise<string[]> {
   const resolvedPath = parentPath.startsWith("~")
-    ? parentPath.replace(/^~/, homedir())
+    ? sshHost
+      ? parentPath.replace(/^~/, "$HOME")
+      : parentPath.replace(/^~/, homedir())
     : parentPath;
 
-  try {
-    const output = await execGit(
-      `find "${resolvedPath}" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort`,
-      sshHost || null
-    );
+  const output = await execGit(
+    `find "${resolvedPath}" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort`,
+    sshHost || null
+  );
 
-    if (!output) return [];
+  if (!output) return [];
 
-    return output
-      .split("\n")
-      .filter(Boolean)
-      .map((dir) => path.basename(dir))
-      .filter((name) => !name.startsWith("."));
-  } catch {
-    return [];
-  }
+  return output
+    .split("\n")
+    .filter(Boolean)
+    .map((dir) => path.basename(dir))
+    .filter((name) => !name.startsWith("."));
 }
 
 /** 프로젝트의 브랜치 목록을 반환한다 */
@@ -371,8 +380,11 @@ export async function getProjectHooksStatus(
 ): Promise<ClaudeHooksStatus | null> {
   const repo = await getProjectRepository();
   const project = await repo.findOneBy({ id: projectId });
-  if (!project || project.sshHost) return null;
+  if (!project) return null;
 
+  if (project.sshHost) {
+    return getClaudeHooksStatusRemote(project.sshHost, project.repoPath);
+  }
   return getClaudeHooksStatus(project.repoPath);
 }
 
@@ -383,11 +395,14 @@ export async function installProjectHooks(
   const repo = await getProjectRepository();
   const project = await repo.findOneBy({ id: projectId });
   if (!project) return { success: false, error: "프로젝트를 찾을 수 없습니다." };
-  if (project.sshHost) return { success: false, error: "SSH 원격 프로젝트는 지원하지 않습니다." };
 
   try {
-    const kanvibeUrl = `http://localhost:${process.env.PORT || 4885}`;
-    await setupClaudeHooks(project.repoPath, project.name, kanvibeUrl);
+    const kanvibeUrl = getKanvibeUrl(!!project.sshHost);
+    if (project.sshHost) {
+      await setupClaudeHooksRemote(project.sshHost, project.repoPath, project.name, kanvibeUrl);
+    } else {
+      await setupClaudeHooks(project.repoPath, project.name, kanvibeUrl);
+    }
     return { success: true };
   } catch (error) {
     return {
@@ -403,9 +418,12 @@ export async function getTaskHooksStatus(
 ): Promise<ClaudeHooksStatus | null> {
   const taskRepo = await getTaskRepository();
   const task = await taskRepo.findOne({ where: { id: taskId }, relations: ["project"] });
-  if (!task?.project || task.project.sshHost) return null;
+  if (!task?.project) return null;
 
   const targetPath = task.worktreePath || task.project.repoPath;
+  if (task.project.sshHost) {
+    return getClaudeHooksStatusRemote(task.project.sshHost, targetPath);
+  }
   return getClaudeHooksStatus(targetPath);
 }
 
@@ -416,12 +434,15 @@ export async function installTaskHooks(
   const taskRepo = await getTaskRepository();
   const task = await taskRepo.findOne({ where: { id: taskId }, relations: ["project"] });
   if (!task?.project) return { success: false, error: "프로젝트를 찾을 수 없습니다." };
-  if (task.project.sshHost) return { success: false, error: "SSH 원격 프로젝트는 지원하지 않습니다." };
 
   try {
-    const kanvibeUrl = `http://localhost:${process.env.PORT || 4885}`;
+    const kanvibeUrl = getKanvibeUrl(!!task.project.sshHost);
     const targetPath = task.worktreePath || task.project.repoPath;
-    await setupClaudeHooks(targetPath, task.project.name, kanvibeUrl);
+    if (task.project.sshHost) {
+      await setupClaudeHooksRemote(task.project.sshHost, targetPath, task.project.name, kanvibeUrl);
+    } else {
+      await setupClaudeHooks(targetPath, task.project.name, kanvibeUrl);
+    }
     return { success: true };
   } catch (error) {
     return {
@@ -437,8 +458,11 @@ export async function getProjectGeminiHooksStatus(
 ): Promise<GeminiHooksStatus | null> {
   const repo = await getProjectRepository();
   const project = await repo.findOneBy({ id: projectId });
-  if (!project || project.sshHost) return null;
+  if (!project) return null;
 
+  if (project.sshHost) {
+    return getGeminiHooksStatusRemote(project.sshHost, project.repoPath);
+  }
   return getGeminiHooksStatus(project.repoPath);
 }
 
@@ -449,11 +473,14 @@ export async function installProjectGeminiHooks(
   const repo = await getProjectRepository();
   const project = await repo.findOneBy({ id: projectId });
   if (!project) return { success: false, error: "프로젝트를 찾을 수 없습니다." };
-  if (project.sshHost) return { success: false, error: "SSH 원격 프로젝트는 지원하지 않습니다." };
 
   try {
-    const kanvibeUrl = `http://localhost:${process.env.PORT || 4885}`;
-    await setupGeminiHooks(project.repoPath, project.name, kanvibeUrl);
+    const kanvibeUrl = getKanvibeUrl(!!project.sshHost);
+    if (project.sshHost) {
+      await setupGeminiHooksRemote(project.sshHost, project.repoPath, project.name, kanvibeUrl);
+    } else {
+      await setupGeminiHooks(project.repoPath, project.name, kanvibeUrl);
+    }
     return { success: true };
   } catch (error) {
     return {
@@ -469,9 +496,12 @@ export async function getTaskGeminiHooksStatus(
 ): Promise<GeminiHooksStatus | null> {
   const taskRepo = await getTaskRepository();
   const task = await taskRepo.findOne({ where: { id: taskId }, relations: ["project"] });
-  if (!task?.project || task.project.sshHost) return null;
+  if (!task?.project) return null;
 
   const targetPath = task.worktreePath || task.project.repoPath;
+  if (task.project.sshHost) {
+    return getGeminiHooksStatusRemote(task.project.sshHost, targetPath);
+  }
   return getGeminiHooksStatus(targetPath);
 }
 
@@ -482,12 +512,15 @@ export async function installTaskGeminiHooks(
   const taskRepo = await getTaskRepository();
   const task = await taskRepo.findOne({ where: { id: taskId }, relations: ["project"] });
   if (!task?.project) return { success: false, error: "프로젝트를 찾을 수 없습니다." };
-  if (task.project.sshHost) return { success: false, error: "SSH 원격 프로젝트는 지원하지 않습니다." };
 
   try {
-    const kanvibeUrl = `http://localhost:${process.env.PORT || 4885}`;
+    const kanvibeUrl = getKanvibeUrl(!!task.project.sshHost);
     const targetPath = task.worktreePath || task.project.repoPath;
-    await setupGeminiHooks(targetPath, task.project.name, kanvibeUrl);
+    if (task.project.sshHost) {
+      await setupGeminiHooksRemote(task.project.sshHost, targetPath, task.project.name, kanvibeUrl);
+    } else {
+      await setupGeminiHooks(targetPath, task.project.name, kanvibeUrl);
+    }
     return { success: true };
   } catch (error) {
     return {
@@ -502,8 +535,11 @@ export async function getProjectCodexHooksStatus(
 ): Promise<CodexHooksStatus | null> {
   const repo = await getProjectRepository();
   const project = await repo.findOneBy({ id: projectId });
-  if (!project || project.sshHost) return null;
+  if (!project) return null;
 
+  if (project.sshHost) {
+    return getCodexHooksStatusRemote(project.sshHost, project.repoPath);
+  }
   return getCodexHooksStatus(project.repoPath);
 }
 
@@ -513,11 +549,14 @@ export async function installProjectCodexHooks(
   const repo = await getProjectRepository();
   const project = await repo.findOneBy({ id: projectId });
   if (!project) return { success: false, error: "프로젝트를 찾을 수 없습니다." };
-  if (project.sshHost) return { success: false, error: "SSH 원격 프로젝트는 지원하지 않습니다." };
 
   try {
-    const kanvibeUrl = `http://localhost:${process.env.PORT || 4885}`;
-    await setupCodexHooks(project.repoPath, project.name, kanvibeUrl);
+    const kanvibeUrl = getKanvibeUrl(!!project.sshHost);
+    if (project.sshHost) {
+      await setupCodexHooksRemote(project.sshHost, project.repoPath, project.name, kanvibeUrl);
+    } else {
+      await setupCodexHooks(project.repoPath, project.name, kanvibeUrl);
+    }
     return { success: true };
   } catch (error) {
     return {
@@ -532,9 +571,12 @@ export async function getTaskCodexHooksStatus(
 ): Promise<CodexHooksStatus | null> {
   const taskRepo = await getTaskRepository();
   const task = await taskRepo.findOne({ where: { id: taskId }, relations: ["project"] });
-  if (!task?.project || task.project.sshHost) return null;
+  if (!task?.project) return null;
 
   const targetPath = task.worktreePath || task.project.repoPath;
+  if (task.project.sshHost) {
+    return getCodexHooksStatusRemote(task.project.sshHost, targetPath);
+  }
   return getCodexHooksStatus(targetPath);
 }
 
@@ -544,12 +586,15 @@ export async function installTaskCodexHooks(
   const taskRepo = await getTaskRepository();
   const task = await taskRepo.findOne({ where: { id: taskId }, relations: ["project"] });
   if (!task?.project) return { success: false, error: "프로젝트를 찾을 수 없습니다." };
-  if (task.project.sshHost) return { success: false, error: "SSH 원격 프로젝트는 지원하지 않습니다." };
 
   try {
-    const kanvibeUrl = `http://localhost:${process.env.PORT || 4885}`;
+    const kanvibeUrl = getKanvibeUrl(!!task.project.sshHost);
     const targetPath = task.worktreePath || task.project.repoPath;
-    await setupCodexHooks(targetPath, task.project.name, kanvibeUrl);
+    if (task.project.sshHost) {
+      await setupCodexHooksRemote(task.project.sshHost, targetPath, task.project.name, kanvibeUrl);
+    } else {
+      await setupCodexHooks(targetPath, task.project.name, kanvibeUrl);
+    }
     return { success: true };
   } catch (error) {
     return {
@@ -557,4 +602,19 @@ export async function installTaskCodexHooks(
       error: error instanceof Error ? error.message : "hooks 설정 실패",
     };
   }
+}
+
+/** 프로젝트의 원격 셸을 변경한다 */
+export async function updateProjectRemoteShell(
+  projectId: string,
+  remoteShell: string | null
+): Promise<{ success: boolean }> {
+  const repo = await getProjectRepository();
+  const project = await repo.findOneBy({ id: projectId });
+  if (!project) return { success: false };
+
+  project.remoteShell = remoteShell || null;
+  await repo.save(project);
+  revalidatePath("/[locale]", "page");
+  return { success: true };
 }
